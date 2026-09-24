@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model KnowledgeEntry {
+  id        String   @id @default(cuid())
+  title     String
+  type      String
+  topic     String
+  content   String
+  tags      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  date        DateTime
+  time        String
+  duration    Int
+  status      String   @default("todo")
+  priority    String   @default("medium")
+  project     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  status      String   @default("active")
+  progress    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  date      DateTime @unique
+  did       String
+  learned   String
+  mistakes  String
+  next      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InboxItem {
+  id        String   @id @default(cuid())
+  text      String
+  status    String   @default("inbox")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
