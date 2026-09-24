@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 
     const lower = command.toLowerCase();
     const relativeTask = command.match(/^(?:remind me|task)\s+(.+?)\s+(tomorrow|today|in\s+\d+\s+(?:hour|hours|minute|minutes)|next\s+\w+)\s*(?:at\s+(\d{1,2})(?::(\d{2}))?)?\s*$/i);
-    if (relativeTask) {
+    const recurringMatch = command.match(/^(?:remind me|task)\s+(.+?)\s+every\s+(day|daily|week|weekly|month|monthly|monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?:\s+at\s+(\d{1,2})(?::(\d{2}))?)?\s*$/i);\n    if (recurringMatch) {\n      const rule=recurringMatch[2].toLowerCase(); const recurrence=["day","daily"].includes(rule)?"daily":["week","weekly"].includes(rule)?"weekly":["month","monthly"].includes(rule)?"monthly":"weekly";\n      const date=new Date(); const days=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"]; if(days.includes(rule)){const delta=(days.indexOf(rule)-date.getDay()+7)%7; date.setDate(date.getDate()+(delta||7));}\n      if(recurringMatch[3]) date.setHours(Number(recurringMatch[3]),Number(recurringMatch[4]||0),0,0);\n      const task=await db.task.create({data:{title:recurringMatch[1].trim(),date,time:date.toTimeString().slice(0,5),duration:30,status:"todo",priority:"medium",recurrence}}); return NextResponse.json({type:"created",kind:"task",item:task,parser:"recurring-task"});\n    }\n    if (relativeTask) {
       const phrase=relativeTask[2].toLowerCase(), date=new Date();
       if (phrase==="tomorrow") date.setDate(date.getDate()+1);
       else if (phrase==="today") {}
