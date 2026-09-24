@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   if (provided !== token) return NextResponse.json({ error: "Private NEXUM access required." }, { status: 401 });
 
   const redirect = safeRedirect(request.nextUrl.searchParams.get("redirect"));
-  const response = NextResponse.redirect(new URL(redirect, request.url));
+  const response = NextResponse.redirect(new URL("/?auth=1", request.url));
   response.cookies.set("nexum_access", token, {
     httpOnly: true,
     sameSite: "lax",
