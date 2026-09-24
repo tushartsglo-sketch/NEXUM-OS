@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";\n\nasync function commandEmbedding(input:string){ if(!process.env.OPENAI_API_KEY) return null; const r=await fetch("https://api.openai.com/v1/embeddings",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+process.env.OPENAI_API_KEY},body:JSON.stringify({model:process.env.NEXUM_EMBEDDING_MODEL||"text-embedding-3-small",input})}); if(!r.ok)return null; const d=await r.json(); return d.data?.[0]?.embedding||null; }\nfunction cosine(a:number[],b:number[]){let dot=0,aa=0,bb=0;for(let i=0;i<a.length;i++){dot+=a[i]*b[i];aa+=a[i]*a[i];bb+=b[i]*b[i]}return dot/(Math.sqrt(aa)*Math.sqrt(bb)||1); }
+import { db } from "@/lib/db";
+
+async function commandEmbedding(input:string){ if(!process.env.OPENAI_API_KEY) return null; const r=await fetch("https://api.openai.com/v1/embeddings",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+process.env.OPENAI_API_KEY},body:JSON.stringify({model:process.env.NEXUM_EMBEDDING_MODEL||"text-embedding-3-small",input})}); if(!r.ok)return null; const d=await r.json(); return d.data?.[0]?.embedding||null; }
+function cosine(a:number[],b:number[]){let dot=0,aa=0,bb=0;for(let i=0;i<a.length;i++){dot+=a[i]*b[i];aa+=a[i]*a[i];bb+=b[i]*b[i]}return dot/(Math.sqrt(aa)*Math.sqrt(bb)||1); }
 
 function text(v: unknown) { return typeof v === "string" ? v.trim() : ""; }
 
@@ -20,7 +23,14 @@ export async function POST(request: NextRequest) {
       }
     }
     const relativeTask = command.match(/^(?:remind me|task)\s+(.+?)\s+(tomorrow|today|in\s+\d+\s+(?:hour|hours|minute|minutes)|next\s+\w+)\s*(?:at\s+(\d{1,2})(?::(\d{2}))?)?\s*$/i);
-    const recurringMatch = command.match(/^(?:remind me|task)\s+(.+?)\s+every\s+(day|daily|week|weekly|month|monthly|monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?:\s+at\s+(\d{1,2})(?::(\d{2}))?)?\s*$/i);\n    if (recurringMatch) {\n      const rule=recurringMatch[2].toLowerCase(); const recurrence=["day","daily"].includes(rule)?"daily":["week","weekly"].includes(rule)?"weekly":["month","monthly"].includes(rule)?"monthly":"weekly";\n      const date=new Date(); const days=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"]; if(days.includes(rule)){const delta=(days.indexOf(rule)-date.getDay()+7)%7; date.setDate(date.getDate()+(delta||7));}\n      if(recurringMatch[3]) date.setHours(Number(recurringMatch[3]),Number(recurringMatch[4]||0),0,0);\n      const reminderMatch=recurringMatch[1].match(/^(.*?)(?:\s+remind(?:er)?\s+(?:me\s+)?(?:at\s+the\s+exact\s+time|exactly|0\s+minutes?|30\s+minutes?|1\s+hour|60\s+minutes?)?\s+before)?$/i); const title=(reminderMatch?.[1]||recurringMatch[1]).trim(); const reminderText=recurringMatch[1].match(/(at\s+the\s+exact\s+time|exactly|0\s+minutes?|30\s+minutes?|1\s+hour|60\s+minutes?)\s+before/i)?.[1]?.toLowerCase()||""; const reminderMinutes=reminderText.includes("30")?30:(reminderText.includes("1 hour")||reminderText.includes("60")?60:0); const task=await db.task.create({data:{title,date,time:date.toTimeString().slice(0,5),duration:30,status:"todo",priority:"medium",recurrence,reminderMinutes}}); return NextResponse.json({type:"created",kind:"task",item:task,parser:"recurring-task"});\n    }\n    if (relativeTask) {
+    const recurringMatch = command.match(/^(?:remind me|task)\s+(.+?)\s+every\s+(day|daily|week|weekly|month|monthly|monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?:\s+at\s+(\d{1,2})(?::(\d{2}))?)?\s*$/i);
+    if (recurringMatch) {
+      const rule=recurringMatch[2].toLowerCase(); const recurrence=["day","daily"].includes(rule)?"daily":["week","weekly"].includes(rule)?"weekly":["month","monthly"].includes(rule)?"monthly":"weekly";
+      const date=new Date(); const days=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"]; if(days.includes(rule)){const delta=(days.indexOf(rule)-date.getDay()+7)%7; date.setDate(date.getDate()+(delta||7));}
+      if(recurringMatch[3]) date.setHours(Number(recurringMatch[3]),Number(recurringMatch[4]||0),0,0);
+      const reminderMatch=recurringMatch[1].match(/^(.*?)(?:\s+remind(?:er)?\s+(?:me\s+)?(?:at\s+the\s+exact\s+time|exactly|0\s+minutes?|30\s+minutes?|1\s+hour|60\s+minutes?)?\s+before)?$/i); const title=(reminderMatch?.[1]||recurringMatch[1]).trim(); const reminderText=recurringMatch[1].match(/(at\s+the\s+exact\s+time|exactly|0\s+minutes?|30\s+minutes?|1\s+hour|60\s+minutes?)\s+before/i)?.[1]?.toLowerCase()||""; const reminderMinutes=reminderText.includes("30")?30:(reminderText.includes("1 hour")||reminderText.includes("60")?60:0); const task=await db.task.create({data:{title,date,time:date.toTimeString().slice(0,5),duration:30,status:"todo",priority:"medium",recurrence,reminderMinutes}}); return NextResponse.json({type:"created",kind:"task",item:task,parser:"recurring-task"});
+    }
+    if (relativeTask) {
       const phrase=relativeTask[2].toLowerCase(), date=new Date();
       if (phrase==="tomorrow") date.setDate(date.getDate()+1);
       else if (phrase==="today") {}
