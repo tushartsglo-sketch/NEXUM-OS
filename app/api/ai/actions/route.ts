@@ -1,27 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createEmbedding } from "@/lib/embedding";
 import { db } from "@/lib/db";
-
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const action = body.action;
-  if (action === "promote-inbox") {
-    const item = await db.inboxItem.findUnique({ where: { id: body.id } });
-    if (!item) return NextResponse.json({ error: "Inbox item not found." }, { status: 404 });
-    const entry = await db.knowledgeEntry.create({ data: { title: item.text.slice(0, 80), type: "idea", topic: "Inbox", content: item.text, tags: "inbox" } });
-    await db.inboxItem.update({ where: { id: item.id }, data: { status: "processed" } });
-    return NextResponse.json({ entry, inbox: item });
-  }
-  if (action === "create-task") {
-    const task = await db.task.create({ data: { title: body.title, description: body.description || null, date: body.date ? new Date(body.date) : new Date(), time: body.time || "09:00", duration: body.duration || 30, priority: body.priority || "medium", status: "todo", project: body.project || null } });
-    return NextResponse.json(task);
-  }
-  if (action === "create-content") {
-    const item = await db.contentItem.create({ data: { title: body.title, format: body.format || "post", stage: "idea", body: body.body || "", sourceIdea: body.sourceIdea || "", researchId: body.researchId || null } });
-    return NextResponse.json(item);
-  }
-  if (action === "create-research") {
-    const item = await db.researchProject.create({ data: { title: body.title, question: body.question || "", status: "idea" } });
-    return NextResponse.json(item);
-  }
-  return NextResponse.json({ error: "Unknown action." }, { status: 400 });
-}
+function text(v:unknown){return typeof v==="string"?v.trim():"";}
+function fail(e:unknown,s=400){return NextResponse.json({error:e instanceof Error?e.message:"AI action failed."},{status:s});}
+export async function POST(request:NextRequest){try{const b=await request.json(),action=text(b.action),id=text(b.id);
+ if(action==="promote-inbox"){const item=await db.inboxItem.findUnique({where:{id}});if(!item)return fail(new Error("Inbox item not found."),404);const entry=await db.knowledgeEntry.create({data:{title:item.text.slice(0,80),type:"idea",topic:"Inbox",content:item.text,tags:"inbox",embedding:await createEmbedding(item.text)}});await db.inboxItem.update({where:{id:item.id},data:{status:"processed"}});return NextResponse.json({entry,inbox:item});}
+ if(action==="create-task"){const title=text(b.title);if(!title)throw new Error("title is required.");const d=b.date?new Date(b.date):new Date();if(Number.isNaN(d.getTime()))throw new Error("Invalid date.");return NextResponse.json(await db.task.create({data:{title,description:text(b.description)||null,date:d,time:/^([01]\\d|2[0-3]):[0-5]\\d$/.test(text(b.time))?text(b.time):"09:00",duration:Math.min(1440,Math.max(1,Number(b.duration)||30)),priority:["low","medium","high"].includes(text(b.priority))?text(b.priority):"medium",status:"todo",project:text(b.project)||null}}));}
+ if(action==="create-content"){const title=text(b.title);if(!title)throw new Error("title is required.");return NextResponse.json(await db.contentItem.create({data:{title,format:text(b.format)||"post",stage:"idea",body:text(b.body),sourceIdea:text(b.sourceIdea),researchId:text(b.researchId)||null}}));}
+ if(action==="create-research"){const title=text(b.title);if(!title)throw new Error("title is required.");return NextResponse.json(await db.researchProject.create({data:{title,question:text(b.question),status:"idea"}}));}
+ return fail(new Error("Unknown action."));}catch(e){return fail(e);}}
