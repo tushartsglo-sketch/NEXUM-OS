@@ -10,6 +10,8 @@ export async function POST(request: NextRequest) {
     if (!command) return NextResponse.json({ error: "Command is required." }, { status: 400 });
 
     const lower = command.toLowerCase();
+    const relativeTask = command.match(/^(?:remind me|task)\s+(.+?)\s+(?:tomorrow|today)\s+at\s+(\d{1,2})(?::(\d{2}))?\s*$/i);
+    if (relativeTask) { const day = /tomorrow/i.test(command) ? 1 : 0; const date = new Date(); date.setDate(date.getDate()+day); date.setHours(Number(relativeTask[2]), Number(relativeTask[3]||0), 0, 0); const task=await db.task.create({data:{title:relativeTask[1].trim(),date,time:date.toTimeString().slice(0,5),duration:30,status:"todo",priority:"medium"}}); return NextResponse.json({type:"created",kind:"task",item:task,parser:"relative-task"}); }
     if (lower.startsWith("task:")) {
       const title = command.slice(5).trim();
       if (!title) return NextResponse.json({ error: "Task title is required." }, { status: 400 });
