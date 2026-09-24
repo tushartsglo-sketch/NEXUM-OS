@@ -28,6 +28,7 @@ model Task {
   description String?
   date        DateTime
   time        String
+  timezone    String   @default("UTC")
   duration    Int
   status      String   @default("todo")
   priority    String   @default("medium")
