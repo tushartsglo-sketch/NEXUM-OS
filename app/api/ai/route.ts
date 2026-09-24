@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       ...journal.map(x => ({ kind: "journal" as const, title: x.date.toISOString().slice(0,10), content: "Did: " + x.did + "\nLearned: " + x.learned + "\nMistakes: " + x.mistakes + "\nNext: " + x.next })),
       ...inbox.map(x => ({ kind: "inbox", title: x.createdAt.toISOString(), content: x.text })),
       ...research.map(x => ({ kind: "research", title: x.title, content: "Question: " + x.question + "\nStatus: " + x.status + "\nNotes: " + x.notes + "\nInsights: " + x.insights + "\nSources: " + x.sources.map(s => s.title + " " + s.url).join("; ") })),
-      ...library.map(x => ({ kind: "library", title: x.name, content: x.type + " | " + x.description + " | Tags: " + x.tags + " | URL: " + x.url })),
+      ...library.map(x => ({ kind: "library", title: x.name, content: x.type + " | " + x.description + " | Tags: " + x.tags + " | URL: " + x.url + "\nDocument text: " + x.documentText })),
       ...contentItems.map(x => ({ kind: "content", title: x.title, content: "Format: " + x.format + " | Stage: " + x.stage + " | Source idea: " + x.sourceIdea + "\n" + x.body }))
     ]);
 
