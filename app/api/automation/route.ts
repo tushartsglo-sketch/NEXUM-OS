@@ -32,11 +32,18 @@ function nextOccurrence(date: Date, recurrence: string) {
 }
 
 async function generateRecurringTasks(now: Date) {
-  const recurring = await db.task.findMany({ where: { recurrence: { not: "none" } }, orderBy: { date: "asc" } });
+  const recurring = await db.task.findMany({
+    where: { recurrence: { not: "none" } },
+    orderBy: { date: "asc" }
+  });
   let created = 0;
+  const processedSeries = new Set<string>();
 
   for (const task of recurring) {
     const key = task.recurrenceKey || task.id;
+    if (processedSeries.has(key)) continue;
+    processedSeries.add(key);
+
     if (!task.recurrenceKey || !task.occurrenceDate) {
       await db.task.update({
         where: { id: task.id },
@@ -44,12 +51,10 @@ async function generateRecurringTasks(now: Date) {
       });
     }
 
-    const series = await db.task.findMany({
+    const latest = await db.task.findFirst({
       where: { OR: [{ recurrenceKey: key }, { id: key }] },
-      orderBy: { date: "desc" },
-      take: 1
+      orderBy: { date: "desc" }
     });
-    const latest = series[0];
     if (!latest || latest.recurrence === "none") continue;
 
     let candidate = nextOccurrence(latest.date, latest.recurrence);
@@ -57,8 +62,7 @@ async function generateRecurringTasks(now: Date) {
 
     for (let i = 0; i < 12 && candidate <= now; i++) {
       const occurrenceDate = new Date(candidate);
-      const existing = await db.task.findFirst({ where: { recurrenceKey: key, occurrenceDate } });
-      if (!existing) {
+      try {
         await db.task.create({
           data: {
             title: latest.title,
@@ -76,7 +80,12 @@ async function generateRecurringTasks(now: Date) {
           }
         });
         created++;
+      } catch (error) {
+        if (!(error && typeof error === "object" && "code" in error && error.code === "P2002")) {
+          throw error;
+        }
       }
+
       candidate = nextOccurrence(candidate, latest.recurrence);
       if (!candidate) break;
     }
