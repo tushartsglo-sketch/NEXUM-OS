@@ -1,18 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-export async function GET(request: NextRequest) {
-  const q = new URL(request.url).searchParams.get("q")?.trim().toLowerCase() || "";
-  if (!q) return NextResponse.json({knowledge:[],research:[],library:[],content:[],projects:[],tasks:[],journal:[],inbox:[]});
-  const [knowledge,research,library,content,projects,tasks,journal,inbox] = await Promise.all([
-    db.knowledgeEntry.findMany({where:{OR:[{title:{contains:q,mode:"insensitive"}},{content:{contains:q,mode:"insensitive"}},{topic:{contains:q,mode:"insensitive"}},{tags:{contains:q,mode:"insensitive"}}]},take:30}),
-    db.researchProject.findMany({where:{OR:[{title:{contains:q,mode:"insensitive"}},{question:{contains:q,mode:"insensitive"}},{notes:{contains:q,mode:"insensitive"}},{insights:{contains:q,mode:"insensitive"}}]},take:30}),
-    db.libraryFile.findMany({where:{OR:[{name:{contains:q,mode:"insensitive"}},{description:{contains:q,mode:"insensitive"}},{tags:{contains:q,mode:"insensitive"}},{documentText:{contains:q,mode:"insensitive"}}]},take:30}),
-    db.contentItem.findMany({where:{OR:[{title:{contains:q,mode:"insensitive"}},{body:{contains:q,mode:"insensitive"}},{sourceIdea:{contains:q,mode:"insensitive"}}]},take:30}),
-    db.project.findMany({where:{OR:[{name:{contains:q,mode:"insensitive"}},{description:{contains:q,mode:"insensitive"}}]},take:30}),
-    db.task.findMany({where:{OR:[{title:{contains:q,mode:"insensitive"}},{description:{contains:q,mode:"insensitive"}},{project:{contains:q,mode:"insensitive"}}]},take:30}),
-    db.journalEntry.findMany({where:{OR:[{did:{contains:q,mode:"insensitive"}},{learned:{contains:q,mode:"insensitive"}},{mistakes:{contains:q,mode:"insensitive"}},{next:{contains:q,mode:"insensitive"}}]},take:30}),
-    db.inboxItem.findMany({where:{text:{contains:q,mode:"insensitive"}},take:30})
+async function embed(input:string){
+ if(!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured.");
+ const r=await fetch("https://api.openai.com/v1/embeddings",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+process.env.OPENAI_API_KEY},body:JSON.stringify({model:process.env.NEXUM_EMBEDDING_MODEL||"text-embedding-3-small",input})});
+ if(!r.ok) throw new Error("Embedding provider request failed.");
+ const d=await r.json(); return d.data[0].embedding as number[];
+}
+function cosine(a:number[],b:number[]){let dot=0,aa=0,bb=0;for(let i=0;i<a.length;i++){dot+=a[i]*b[i];aa+=a[i]*a[i];bb+=b[i]*b[i]}return dot/(Math.sqrt(aa)*Math.sqrt(bb)||1)}
+export async function GET(request:NextRequest){
+ try{
+  const q=new URL(request.url).searchParams.get("q")?.trim()||"";
+  const semantic=new URL(request.url).searchParams.get("semantic")==="1";
+  if(!q)return NextResponse.json({results:[]});
+  if(!semantic){
+   const rows=await db.knowledgeEntry.findMany({where:{OR:[{title:{contains:q,mode:"insensitive"}},{content:{contains:q,mode:"insensitive"}},{topic:{contains:q,mode:"insensitive"}},{tags:{contains:q,mode:"insensitive"}}]},take:30});
+   return NextResponse.json({results:rows.map(x=>({kind:"knowledge",id:x.id,title:x.title,score:1,preview:x.content.slice(0,240)}))});
+  }
+  const vector=await embed(q);
+  const [knowledge,research,library]=await Promise.all([
+   db.knowledgeEntry.findMany({where:{NOT:{embedding:""}}}),
+   db.researchProject.findMany({where:{NOT:{embedding:""}}}),
+   db.libraryFile.findMany({where:{NOT:{embedding:""}}})
   ]);
-  return NextResponse.json({knowledge,research,library,content,projects,tasks,journal,inbox});
+  const results=[
+   ...knowledge.map(x=>({kind:"knowledge",id:x.id,title:x.title,text:x.content,embedding:x.embedding})),
+   ...research.map(x=>({kind:"research",id:x.id,title:x.title,text:x.question+" "+x.notes+" "+x.insights,embedding:x.embedding})),
+   ...library.map(x=>({kind:"library",id:x.id,title:x.name,text:x.description+" "+x.documentText,embedding:x.embedding}))
+  ].map(x=>({...x,score:cosine(vector,JSON.parse(x.embedding))})).sort((a,b)=>b.score-a.score).slice(0,20);
+  return NextResponse.json({results:results.map(({embedding,...x})=>({...x,preview:x.text.slice(0,300)}))});
+ }catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Semantic search failed."},{status:500})}
 }
