@@ -15,7 +15,8 @@ export default function TasksPage(){
  async function enableNotifications(){if(!("Notification" in window)){setNotificationState("denied");return}const p=await Notification.requestPermission();setNotificationState(p as "granted"|"denied")}
  async function create(){
   if(!title.trim())return;
-  const x=await fetch("/api/db",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"task",title,description,date,time,duration:Number(duration),priority,project,recurrence:repeat,reminderMinutes:Number(reminder)})}).then(r=>r.json());
+  const timezone=Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC";
+  const x=await fetch("/api/db",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"task",title,description,date,time,duration:Number(duration),priority,project,recurrence:repeat,recurrenceRule:["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].includes(repeat)?"weekday:"+["sunday","monday","tuesday","wednesday","thursday","friday","saturday"].indexOf(repeat):repeat==="weekday"?"weekday":null,timezone,reminderMinutes:Number(reminder)})}).then(r=>r.json());
   setTasks(v=>[...v,x]);setTitle("");setDescription("");
  }
  async function toggle(task:Task){const status=task.status==="done"?"todo":"done";const x=await fetch("/api/db",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"task",id:task.id,status})}).then(r=>r.json());setTasks(v=>v.map(t=>t.id===x.id?x:t)); setSelectedId(null)}
