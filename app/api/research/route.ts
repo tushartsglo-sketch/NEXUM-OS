@@ -1,3 +1,4 @@
+import { createEmbedding } from "@/lib/embedding";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
@@ -7,10 +8,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  return NextResponse.json(await db.researchProject.create({
+  const created = await db.researchProject.create({
     data: { title: body.title, question: body.question || "", status: body.status || "idea", notes: body.notes || "", insights: body.insights || "" },
     include: { sources: true }
-  }));
+  });
+  if (process.env.OPENAI_API_KEY) await db.researchProject.update({ where: { id: created.id }, data: { embedding: await createEmbedding(created.title + "\n" + created.question + "\n" + created.notes + "\n" + created.insights) } });
+  return NextResponse.json(created);
 }
 
 export async function PATCH(request: NextRequest) {
