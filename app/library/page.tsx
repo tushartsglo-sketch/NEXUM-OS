@@ -1,0 +1,11 @@
+"use client";
+import { useEffect,useState } from "react";
+type File={id:string;name:string;type:string;url:string;description:string;tags:string};
+export default function LibraryPage(){
+ const [files,setFiles]=useState<File[]>([]),[name,setName]=useState(""),[url,setUrl]=useState(""),[type,setType]=useState("link"),[description,setDescription]=useState(""),[tags,setTags]=useState("");
+ useEffect(()=>{fetch("/api/library").then(r=>r.json()).then(setFiles)},[]);
+ async function add(){if(!name.trim()||!url.trim())return;const x=await fetch("/api/library",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,url,type,description,tags})}).then(r=>r.json());setFiles(v=>[x,...v]);setName("");setUrl("");setDescription("");setTags("")}
+ return <main className="module-page"><header className="module-header"><div><p className="eyebrow">PERSONAL LIBRARY</p><h1>Library</h1><p>Keep useful documents, papers, screenshots, media, and research links in one private index.</p></div><span className="module-count">{files.length} items</span></header>
+ <section className="capture-form project-create"><input value={name} onChange={e=>setName(e.target.value)} placeholder="File or resource name"/><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="File URL or storage URL"/><select value={type} onChange={e=>setType(e.target.value)}><option>link</option><option>pdf</option><option>document</option><option>image</option><option>video</option><option>paper</option></select><input value={description} onChange={e=>setDescription(e.target.value)} placeholder="Description"/><input value={tags} onChange={e=>setTags(e.target.value)} placeholder="Tags"/><button className="primary-button" onClick={add}>Add to library</button></section>
+ <section className="library-list">{files.map(f=><article className="library-item" key={f.id}><div><p className="eyebrow">{f.type}</p><h2>{f.name}</h2><p>{f.description||"No description."}</p>{f.tags&&<small>{f.tags}</small>}</div><a className="link" href={f.url} target="_blank" rel="noreferrer">Open</a></article>)}{!files.length&&<div className="empty-state">Your library is empty. Add a useful source, paper, document, or media link.</div>}</section></main>
+}
