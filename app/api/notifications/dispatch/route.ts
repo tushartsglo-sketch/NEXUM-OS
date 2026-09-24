@@ -28,7 +28,7 @@ export async function POST(request:NextRequest){
   if(now<fireAt||now>new Date(fireAt.getTime()+2*60000))continue;
   const delivery=await db.notificationDelivery.findUnique({where:{taskId_scheduledAt:{taskId:task.id,scheduledAt:when}}});
   if(delivery)continue;
-  await db.notificationDelivery.create({data:{taskId:task.id,scheduledAt:when}});
+  try { await db.notificationDelivery.create({data:{taskId:task.id,scheduledAt:when}}); } catch (error) { if (error && typeof error==="object" && "code" in error && error.code==="P2002") continue; throw error; }
   for(const sub of subs){try{await webpush.sendNotification({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth}},JSON.stringify({title:task.title,body:(task.reminderMinutes||0)===0?"Starting now":"Starts in "+task.reminderMinutes+" minutes",url:"/tasks?task="+task.id,tag:"task-"+task.id}));sent++}catch(e:any){if(e?.statusCode===404||e?.statusCode===410)await db.pushSubscription.delete({where:{id:sub.id}})}}}
  const recurring=await recurringResponse.json();
  return NextResponse.json({sent,checked:tasks.length,recurringCreated:recurring.created||0});
