@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
 
     if (type === "task") {
       const recurrence = validChoice(body.recurrence, ["none", "daily", "weekly", "monthly"], "none", "recurrence");
+      const recurrenceRule = optionalString(body.recurrenceRule) || null;
       return NextResponse.json(await db.task.create({
         data: {
           title: requiredString(body.title, "title"),
@@ -115,6 +116,7 @@ export async function POST(request: NextRequest) {
           priority: validChoice(body.priority, ["low", "medium", "high"], "medium", "priority"),
           project: optionalString(body.project) || null,
           recurrence,
+          recurrenceRule,
           reminderMinutes: safeNumber(body.reminderMinutes, 10, 0, 1440)
         }
       }));
@@ -142,6 +144,7 @@ export async function PATCH(request: NextRequest) {
       if (body.priority !== undefined) data.priority = validChoice(body.priority, ["low", "medium", "high"], "medium", "priority");
       if (body.project !== undefined) data.project = optionalString(body.project) || null;
       if (body.recurrence !== undefined) data.recurrence = validChoice(body.recurrence, ["none", "daily", "weekly", "monthly"], "none", "recurrence");
+      if (body.recurrenceRule !== undefined) data.recurrenceRule = optionalString(body.recurrenceRule) || null;
       if (body.reminderMinutes !== undefined) data.reminderMinutes = safeNumber(body.reminderMinutes, 10, 0, 1440);
       return NextResponse.json(await db.task.update({ where: { id: body.id }, data }));
     }
