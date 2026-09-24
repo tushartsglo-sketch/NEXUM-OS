@@ -122,6 +122,15 @@ model DocumentAnalysis {
   libraryFile    LibraryFile @relation(fields: [libraryFileId], references: [id], onDelete: Cascade)
 }
 
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model KnowledgeLink {
   id        String   @id @default(cuid())
   fromType  String
