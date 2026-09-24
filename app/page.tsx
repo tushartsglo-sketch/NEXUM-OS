@@ -8,7 +8,7 @@ type Knowledge={id:string;title:string;type:string;topic:string};
 type Project={id:string;name:string;progress:number;status:string};
 type Inbox={id:string;text:string;status:string};
 
-const nav=[["Dashboard","/"],["Inbox","/inbox"],["Knowledge","/knowledge"],["Research","/research"],["Connections","/connections"],["Projects","/projects"],["Content","/content"],["Tasks","/tasks"],["Journal","/journal"],["Library","/library"],["Search","/search"],["AI","/ai"]];
+const nav=[["Dashboard","/"],["Inbox","/inbox"],["Knowledge","/knowledge"],["Research","/research"],["Connections","/connections"],["Projects","/projects"],["Content","/content"],["Tasks","/tasks"],["Journal","/journal"],["Library","/library"],["Search","/search"],["Insights","/insights"],["AI","/ai"]];
 
 export default function Home(){
  const [tasks,setTasks]=useState<Task[]>([]); const [knowledge,setKnowledge]=useState<Knowledge[]>([]); const [projects,setProjects]=useState<Project[]>([]); const [inbox,setInbox]=useState<Inbox[]>([]);
