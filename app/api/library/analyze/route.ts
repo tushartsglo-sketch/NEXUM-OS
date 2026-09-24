@@ -13,6 +13,6 @@ export async function POST(request:NextRequest){
   const data=await response.json();
   const raw=String(data.output_text||"").trim().replace(/^```json\s*/,"").replace(/```$/,"");
   let analysis; try{analysis=JSON.parse(raw)}catch{return NextResponse.json({error:"The document analysis returned invalid structured data."},{status:502})}
-  return NextResponse.json({file:{id:file.id,name:file.name},analysis});
+  await db.documentAnalysis.upsert({where:{libraryFileId:file.id},update:{summary:analysis.summary||"",keyPoints:JSON.stringify(analysis.keyPoints||[]),concepts:JSON.stringify(analysis.concepts||[]),questions:JSON.stringify(analysis.questions||[]),contradictions:JSON.stringify(analysis.contradictions||[]),contentIdeas:JSON.stringify(analysis.contentIdeas||[])},create:{libraryFileId:file.id,summary:analysis.summary||"",keyPoints:JSON.stringify(analysis.keyPoints||[]),concepts:JSON.stringify(analysis.concepts||[]),questions:JSON.stringify(analysis.questions||[]),contradictions:JSON.stringify(analysis.contradictions||[]),contentIdeas:JSON.stringify(analysis.contentIdeas||[])}});\n  return NextResponse.json({file:{id:file.id,name:file.name},analysis,saved:true});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Unable to analyze document."},{status:500})}
 }
