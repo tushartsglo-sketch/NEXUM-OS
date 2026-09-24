@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       const date = task.date ? new Date(task.date + "T00:00:00") : new Date();
       if (Number.isNaN(date.getTime())) return NextResponse.json({ error: "Invalid task date." }, { status: 400 });
       const time = typeof task.time === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(task.time) ? task.time : "09:00";
-      const recurrence = ["none", "daily", "weekly", "monthly"].includes(task.recurrence || "") ? task.recurrence || "none" : "none";
+      const recurrence = ["none", "daily", "weekly", "monthly", "weekday"].includes(task.recurrence || "") ? task.recurrence || "none" : "none";
       const priority = ["low", "medium", "high"].includes(task.priority || "") ? task.priority || "medium" : "medium";
       const reminderMinutes = Number.isInteger(task.reminderMinutes) && task.reminderMinutes >= 0 && task.reminderMinutes <= 1440 ? task.reminderMinutes : 0;
       const title = command.replace(/^(?:remind me|task)\s+/i, "").trim() || command;
