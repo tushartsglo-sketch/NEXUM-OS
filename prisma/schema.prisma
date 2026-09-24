@@ -31,6 +31,8 @@ model Task {
   project     String?
   recurrence  String   @default("none")
   reminderMinutes Int  @default(10)
+  recurrenceKey String?
+  occurrenceDate DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
