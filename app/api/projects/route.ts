@@ -5,9 +5,11 @@ export async function GET() {
   return NextResponse.json(await db.project.findMany({ orderBy: { updatedAt: "desc" } }));
 }
 
+function text(value: unknown, name: string) { if (typeof value !== "string" || !value.trim()) throw new Error(name+" is required."); return value.trim(); }
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  return NextResponse.json(await db.project.create({ data: { name: body.name, description: body.description || "" } }));
+  return NextResponse.json(await db.project.create({ data: { name: text(body.name,"name"), description: body.description || "" } }));
 }
 
 export async function PATCH(request: NextRequest) {
