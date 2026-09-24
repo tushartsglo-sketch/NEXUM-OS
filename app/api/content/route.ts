@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-
-export async function GET() {
-  return NextResponse.json(await db.contentItem.findMany({ orderBy: { updatedAt: "desc" } }));
-}
-function text(value: unknown, name: string) { if (typeof value !== "string" || !value.trim()) throw new Error(name+" is required."); return value.trim(); }
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  return NextResponse.json(await db.contentItem.create({ data: { title: text(body.title,"title"), format: body.format || "post", stage: body.stage || "idea", body: body.body || "", sourceIdea: body.sourceIdea || "", researchId: body.researchId || null } }));
-}
-export async function PATCH(request: NextRequest) {
-  const body = await request.json();
-  return NextResponse.json(await db.contentItem.update({ where: { id: body.id }, data: { title: body.title, format: body.format, stage: body.stage, body: body.body, sourceIdea: body.sourceIdea, researchId: body.researchId } }));
-}
+const formats=["carousel","video","article","post","newsletter"], stages=["idea","draft","production","published"];
+function text(v:unknown,name:string,required=false){if(typeof v!=="string"){if(required)throw new Error(name+" is required.");return "";}const x=v.trim();if(required&&!x)throw new Error(name+" is required.");return x;}
+function fail(e:unknown,s=400){return NextResponse.json({error:e instanceof Error?e.message:"Content request failed."},{status:s});}
+export async function GET(){try{return NextResponse.json(await db.contentItem.findMany({orderBy:{updatedAt:"desc"}}));}catch(e){return fail(e,500);}}
+export async function POST(request:NextRequest){try{const b=await request.json();const format=text(b.format)||"post",stage=text(b.stage)||"idea";if(!formats.includes(format)||!stages.includes(stage))throw new Error("Invalid content format or stage.");return NextResponse.json(await db.contentItem.create({data:{title:text(b.title,"title",true),format,stage,body:text(b.body),sourceIdea:text(b.sourceIdea),researchId:text(b.researchId)||null}}));}catch(e){return fail(e);}}
+export async function PATCH(request:NextRequest){try{const b=await request.json();if(!b.id)throw new Error("id is required.");const format=text(b.format)||"post",stage=text(b.stage)||"idea";if(!formats.includes(format)||!stages.includes(stage))throw new Error("Invalid content format or stage.");return NextResponse.json(await db.contentItem.update({where:{id:b.id},data:{title:text(b.title,"title",true),format,stage,body:text(b.body),sourceIdea:text(b.sourceIdea),researchId:text(b.researchId)||null}}));}catch(e){return fail(e);}}
