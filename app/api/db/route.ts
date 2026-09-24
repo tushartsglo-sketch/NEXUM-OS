@@ -154,7 +154,7 @@ export async function PATCH(request: NextRequest) {
         const seriesWhere = { recurrenceKey: existing.recurrenceKey };
         const seriesData: Record<string, unknown> = {};
         for (const key of ["title", "description", "time", "duration", "priority", "project", "reminderMinutes", "recurrence", "recurrenceRule"]) if (data[key] !== undefined) seriesData[key] = data[key];
-        if (Object.keys(seriesData).length) await db.task.updateMany({ where: seriesWhere, data: seriesData });
+        if (Object.keys(seriesData).length) await db.task.updateMany({ where: { ...seriesWhere, date: { gte: new Date() } }, data: seriesData });
         return NextResponse.json(await db.task.findUnique({ where: { id: body.id } }));
       }
       if (body.recurrenceRule !== undefined) data.recurrenceRule = optionalString(body.recurrenceRule) || null;
