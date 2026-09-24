@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 
 export async function GET(_: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
+  if (!id || id.length > 100) return NextResponse.json({ error: "Invalid library item id." }, { status: 400 });
   const item = await db.libraryFile.findUnique({ where: { id } });
   if (!item || !item.storagePath) return NextResponse.json({ error: "Stored file not found." }, { status: 404 });
   try {
@@ -19,6 +20,7 @@ export async function GET(_: NextRequest, context: { params: Promise<{ id: strin
 
 export async function DELETE(_: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
+  if (!id || id.length > 100) return NextResponse.json({ error: "Invalid library item id." }, { status: 400 });
   const item = await db.libraryFile.findUnique({ where: { id } });
   if (!item) return NextResponse.json({ error: "Library item not found." }, { status: 404 });
   if (item.storagePath) { try { const root = process.env.NEXUM_STORAGE_PATH || path.join(process.cwd(), "storage", "library"); await unlink(path.resolve(root, path.basename(item.storagePath))); } catch {} }
