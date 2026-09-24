@@ -5,11 +5,12 @@ export async function GET() {
   return NextResponse.json(await db.journalEntry.findMany({ orderBy: { date: "desc" } }));
 }
 
+function validDate(value: unknown) { const d=new Date(String(value)); if(!value || Number.isNaN(d.getTime())) throw new Error("Valid date is required."); return d; }
 export async function POST(request: NextRequest) {
   const body = await request.json();
   return NextResponse.json(await db.journalEntry.upsert({
-    where: { date: new Date(body.date) },
+    where: { date: validDate(body.date) },
     update: { did: body.did || "", learned: body.learned || "", mistakes: body.mistakes || "", next: body.next || "" },
-    create: { date: new Date(body.date), did: body.did || "", learned: body.learned || "", mistakes: body.mistakes || "", next: body.next || "" }
+    create: { date: validDate(body.date), did: body.did || "", learned: body.learned || "", mistakes: body.mistakes || "", next: body.next || "" }
   }));
 }
