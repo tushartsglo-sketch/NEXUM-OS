@@ -105,6 +105,17 @@ model LibraryFile {
   sizeBytes    Int      @default(0)
 }
 
+model KnowledgeLink {
+  id        String   @id @default(cuid())
+  fromType  String
+  fromId    String
+  toType    String
+  toId      String
+  relation  String
+  createdAt DateTime @default(now())
+  @@unique([fromType, fromId, toType, toId, relation])
+}
+
 model InboxItem {
   id        String   @id @default(cuid())
   text      String
