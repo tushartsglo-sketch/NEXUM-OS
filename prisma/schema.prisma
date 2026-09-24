@@ -16,6 +16,7 @@ model KnowledgeEntry {
   tags      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  embedding  String   @default("")
 }
 
 model Task {
@@ -62,6 +63,7 @@ model ResearchProject {
   insights    String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  embedding   String   @default("")
   sources     ResearchSource[]
 }
 
@@ -96,6 +98,7 @@ model LibraryFile {
   tags        String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  embedding   String   @default("")
   documentText String  @default("")
   storagePath  String  @default("")
   mimeType     String  @default("")
