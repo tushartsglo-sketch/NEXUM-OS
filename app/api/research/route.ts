@@ -16,6 +16,8 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(created);
 }
 
+export async function DELETE(request: NextRequest) { const {id}=await request.json(); if(!id)return NextResponse.json({error:"id is required."},{status:400}); await db.researchProject.delete({where:{id}}); return NextResponse.json({deleted:true}); }
+
 export async function PATCH(request: NextRequest) {
   const body = await request.json();
   const current = await db.researchProject.findUnique({ where: { id: body.id } });
