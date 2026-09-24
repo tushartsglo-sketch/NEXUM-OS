@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { createEmbedding } from "@/lib/embedding";
 export async function POST(request:NextRequest){
- const {libraryFileId,kind,text}=await request.json();
+ const body=await request.json();
+ const libraryFileId=typeof body.libraryFileId==="string"?body.libraryFileId.trim():"";
+ const kind=typeof body.kind==="string"?body.kind.trim():"";
+ const text=typeof body.text==="string"?body.text.trim():"";
  if(!libraryFileId||!kind||!text)return NextResponse.json({error:"libraryFileId, kind and text are required."},{status:400});
  const file=await db.libraryFile.findUnique({where:{id:libraryFileId}});
  if(!file)return NextResponse.json({error:"Library file not found."},{status:404});
