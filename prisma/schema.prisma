@@ -75,6 +75,18 @@ model ResearchSource {
   createdAt   DateTime       @default(now())
 }
 
+model ContentItem {
+  id          String   @id @default(cuid())
+  title       String
+  format      String   @default("post")
+  stage       String   @default("idea")
+  body        String   @default("")
+  sourceIdea  String   @default("")
+  researchId  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model InboxItem {
   id        String   @id @default(cuid())
   text      String
