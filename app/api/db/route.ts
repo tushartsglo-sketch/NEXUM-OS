@@ -28,5 +28,6 @@ export async function PATCH(request: NextRequest) {
   if (body.type === "task") return NextResponse.json(await db.task.update({ where: { id: body.id }, data: { status: body.status } }));
   if (body.type === "inbox") return NextResponse.json(await db.inboxItem.update({ where: { id: body.id }, data: { status: body.status } }));
   if (body.type === "project") return NextResponse.json(await db.project.update({ where: { id: body.id }, data: { progress: Number(body.progress), status: body.status } }));
+  if (body.type === "knowledge") { const updated = await db.knowledgeEntry.update({ where: { id: body.id }, data: { title: body.title, type: body.entryType, topic: body.topic, tags: body.tags, content: body.content, embedding: await createEmbedding((body.title||"")+"\\n"+(body.topic||"")+"\\n"+(body.tags||"")+"\\n"+(body.content||"")) } }); return NextResponse.json(updated); }
   return NextResponse.json({ error: "Unknown data type." }, { status: 400 });
 }
