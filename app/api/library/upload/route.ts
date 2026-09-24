@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     if (buffer.byteLength !== file.size) return NextResponse.json({ error: "Uploaded file could not be read reliably." }, { status: 400 });
 
     if (extension === ".pdf" && !hasPdfSignature(buffer)) return NextResponse.json({ error: "The uploaded file is not a valid PDF." }, { status: 415 });
-    if (extension === ".docx" && !hasZipSignature(buffer)) return NextResponse.json({ error: "The uploaded file is not a valid DOCX container." }, { status: 415 });
+    if (extension === ".docx" && (!hasZipSignature(buffer) || buffer.byteLength < 100)) return NextResponse.json({ error: "The uploaded file is not a valid DOCX container." }, { status: 415 });
     if ((extension === ".txt" || extension === ".md") && file.type && !["text/plain","text/markdown","text/x-markdown"].includes(file.type)) {
       return NextResponse.json({ error: "Text files must use a text MIME type." }, { status: 415 });
     }
