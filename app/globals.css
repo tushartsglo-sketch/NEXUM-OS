@@ -27,6 +27,6 @@
 .auth-form label{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
 .auth-form input{width:100%;padding:13px 14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;outline:none;}
 .auth-form input:focus{border-color:var(--ink);}
-.auth-form button{margin-top:8px;padding:13px 16px;border:0;background:var(--ink);color:var(--surface);font:600 .9rem/1 inherit;cursor:pointer;}
+.auth-form button{margin-top:8px;padding:13px 16px;border:0;background:var(--ink);color:var(--surface);font-weight:600;font-size:.9rem;line-height:1;cursor:pointer;}
 .auth-form button:disabled{opacity:.5;cursor:not-allowed;}
 .auth-error{margin:8px 0 0;color:#a33;font-size:.85rem;}
