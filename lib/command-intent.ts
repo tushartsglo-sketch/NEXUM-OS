@@ -1,5 +1,5 @@
 type Intent = "search" | "note" | "research" | "task";
-type Recurrence = "none" | "daily" | "weekly" | "monthly";
+type Recurrence = "none" | "daily" | "weekly" | "monthly" | "weekday";
 
 export async function classifyCommand(input: string) {
   const key = process.env.OPENAI_API_KEY;
@@ -28,7 +28,7 @@ export async function classifyCommand(input: string) {
     const priority = ["low", "medium", "high"].includes(parsed.priority) ? parsed.priority : "medium";
     const reminderMinutes = Number.isInteger(parsed.reminderMinutes) && parsed.reminderMinutes >= 0 && parsed.reminderMinutes <= 1440 ? parsed.reminderMinutes : 0;
     if (!["search", "note", "research", "task"].includes(intent)) return null;
-    if (!["none", "daily", "weekly", "monthly"].includes(recurrence)) return null;
+    if (!["none", "daily", "weekly", "monthly", "weekday"].includes(recurrence)) return null;
     if (!text || !Number.isFinite(confidence) || confidence < 0 || confidence > 1) return null;
     return { intent: intent as Intent, text, confidence, date, time, recurrence: recurrence as Recurrence, priority, reminderMinutes };
   } catch {
