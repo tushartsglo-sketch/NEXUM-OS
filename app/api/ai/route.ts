@@ -8,12 +8,15 @@ export async function POST(request: NextRequest) {
     const question = typeof body.question === "string" ? body.question.trim() : "";
     if (!question) return NextResponse.json({ error: "Question is required." }, { status: 400 });
 
-    const [knowledge, tasks, projects, journal, inbox] = await Promise.all([
+    const [knowledge, tasks, projects, journal, inbox, research, library, contentItems] = await Promise.all([
       db.knowledgeEntry.findMany({ orderBy: { updatedAt: "desc" }, take: 40 }),
       db.task.findMany({ orderBy: { updatedAt: "desc" }, take: 30 }),
       db.project.findMany({ orderBy: { updatedAt: "desc" }, take: 20 }),
       db.journalEntry.findMany({ orderBy: { date: "desc" }, take: 30 }),
-      db.inboxItem.findMany({ orderBy: { createdAt: "desc" }, take: 30 })
+      db.inboxItem.findMany({ orderBy: { createdAt: "desc" }, take: 30 }),
+      db.researchProject.findMany({ include: { sources: true }, orderBy: { updatedAt: "desc" }, take: 40 }),
+      db.libraryFile.findMany({ orderBy: { updatedAt: "desc" }, take: 40 }),
+      db.contentItem.findMany({ orderBy: { updatedAt: "desc" }, take: 40 })
     ]);
 
     const context = buildAIContext([
@@ -21,7 +24,10 @@ export async function POST(request: NextRequest) {
       ...tasks.map(x => ({ kind: "task" as const, title: x.title, content: x.status + " | " + x.priority + " | " + x.time + " | " + (x.project || "") })),
       ...projects.map(x => ({ kind: "project" as const, title: x.name, content: x.description + " | " + x.status + " | " + x.progress + "% complete" })),
       ...journal.map(x => ({ kind: "journal" as const, title: x.date.toISOString().slice(0,10), content: "Did: " + x.did + "\nLearned: " + x.learned + "\nMistakes: " + x.mistakes + "\nNext: " + x.next })),
-      ...inbox.map(x => ({ kind: "inbox" as const, title: x.createdAt.toISOString(), content: x.text }))
+      ...inbox.map(x => ({ kind: "inbox", title: x.createdAt.toISOString(), content: x.text })),
+      ...research.map(x => ({ kind: "research", title: x.title, content: "Question: " + x.question + "\nStatus: " + x.status + "\nNotes: " + x.notes + "\nInsights: " + x.insights + "\nSources: " + x.sources.map(s => s.title + " " + s.url).join("; ") })),
+      ...library.map(x => ({ kind: "library", title: x.name, content: x.type + " | " + x.description + " | Tags: " + x.tags + " | URL: " + x.url })),
+      ...contentItems.map(x => ({ kind: "content", title: x.title, content: "Format: " + x.format + " | Stage: " + x.stage + " | Source idea: " + x.sourceIdea + "\n" + x.body }))
     ]);
 
     if (!process.env.OPENAI_API_KEY) return NextResponse.json({ configured: false, answer: "NEXUM Intelligence is connected to your archive, but no AI provider key is configured yet." });
