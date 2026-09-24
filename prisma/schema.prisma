@@ -33,6 +33,7 @@ model Task {
   priority    String   @default("medium")
   project     String?
   recurrence  String   @default("none")
+  recurrenceRule String?
   reminderMinutes Int  @default(10)
   recurrenceKey String?
   occurrenceDate DateTime?
