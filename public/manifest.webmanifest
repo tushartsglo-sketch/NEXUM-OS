@@ -1,0 +1,10 @@
+{
+  "name": "NEXUM",
+  "short_name": "NEXUM",
+  "description": "Private personal knowledge and execution system.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f0ea",
+  "theme_color": "#11110f",
+  "icons": []
+}
