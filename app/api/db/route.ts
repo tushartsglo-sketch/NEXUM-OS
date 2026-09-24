@@ -150,6 +150,13 @@ export async function PATCH(request: NextRequest) {
       if (body.recurrence !== undefined) data.recurrence = validChoice(body.recurrence, ["none", "daily", "weekly", "monthly"], "none", "recurrence");
       if (body.recurrenceRule !== undefined) data.recurrenceRule = optionalString(body.recurrenceRule) || null;
       if (body.recurrence !== undefined || body.recurrenceRule !== undefined) { data.recurrenceKey = null; data.occurrenceDate = null; }
+      if (body.seriesEdit === true && existing.recurrenceKey) {
+        const seriesWhere = { recurrenceKey: existing.recurrenceKey };
+        const seriesData: Record<string, unknown> = {};
+        for (const key of ["title", "description", "time", "duration", "priority", "project", "reminderMinutes", "recurrence", "recurrenceRule"]) if (data[key] !== undefined) seriesData[key] = data[key];
+        if (Object.keys(seriesData).length) await db.task.updateMany({ where: seriesWhere, data: seriesData });
+        return NextResponse.json(await db.task.findUnique({ where: { id: body.id } }));
+      }
       if (body.recurrenceRule !== undefined) data.recurrenceRule = optionalString(body.recurrenceRule) || null;
       if (body.reminderMinutes !== undefined) data.reminderMinutes = safeNumber(body.reminderMinutes, 10, 0, 1440);
       return NextResponse.json(await db.task.update({ where: { id: body.id }, data }));
