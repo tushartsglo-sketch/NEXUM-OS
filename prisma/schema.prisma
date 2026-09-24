@@ -87,6 +87,17 @@ model ContentItem {
   updatedAt   DateTime @updatedAt
 }
 
+model LibraryFile {
+  id          String   @id @default(cuid())
+  name        String
+  type        String
+  url         String
+  description String   @default("")
+  tags        String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model InboxItem {
   id        String   @id @default(cuid())
   text      String
