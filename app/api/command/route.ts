@@ -53,9 +53,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (interpreted && interpreted.confidence >= 0.85 && (interpreted.intent === "note" || interpreted.intent === "research")) {
-      return NextResponse.json({ type: "confirmation_required", kind: interpreted.intent === "note" ? "knowledge" : "research", title: interpreted.text, command });
-    }
 
     if (!confirm && /^(?:remind me|task)\s+/i.test(command)) {
       const recurringPreview = command.match(/^(?:remind me|task)\s+(.+?)\s+every\s+(day|daily|week|weekly|month|monthly|monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?:\s+at\s+(\d{1,2})(?::(\d{2}))?)?/i);
