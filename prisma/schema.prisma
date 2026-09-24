@@ -29,6 +29,8 @@ model Task {
   status      String   @default("todo")
   priority    String   @default("medium")
   project     String?
+  recurrence  String   @default("none")
+  reminderMinutes Int  @default(10)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
