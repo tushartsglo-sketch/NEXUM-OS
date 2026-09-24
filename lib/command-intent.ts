@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+type Intent = "search" | "note" | "research" | "task";
+type Recurrence = "none" | "daily" | "weekly" | "monthly";
 
 export async function classifyCommand(input: string) {
   const key = process.env.OPENAI_API_KEY;
@@ -9,7 +10,7 @@ export async function classifyCommand(input: string) {
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
       body: JSON.stringify({
         model: process.env.NEXUM_AI_MODEL || "gpt-5-mini",
-        instructions: "Classify the user command. Return JSON only with intent, text, confidence. intent must be search, note, research, or task. Use task only for a clear future action. Use note for information to store, research for an investigation, otherwise search. Do not execute or invent dates.",
+        instructions: "Classify a NEXUM command. Return JSON only with intent, text, confidence and optional task fields date, time, recurrence, priority, reminderMinutes. Use task only for a clear future action. Never invent missing scheduling details. Do not execute the request.",
         input
       })
     });
@@ -21,8 +22,16 @@ export async function classifyCommand(input: string) {
     const intent = typeof parsed.intent === "string" ? parsed.intent.trim() : "";
     const text = typeof parsed.text === "string" ? parsed.text.trim() : "";
     const confidence = Number(parsed.confidence);
+    const recurrence = parsed.recurrence === undefined ? "none" : parsed.recurrence;
+    const date = typeof parsed.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : undefined;
+    const time = typeof parsed.time === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(parsed.time) ? parsed.time : undefined;
+    const priority = ["low", "medium", "high"].includes(parsed.priority) ? parsed.priority : "medium";
+    const reminderMinutes = Number.isInteger(parsed.reminderMinutes) && parsed.reminderMinutes >= 0 && parsed.reminderMinutes <= 1440 ? parsed.reminderMinutes : 0;
     if (!["search", "note", "research", "task"].includes(intent)) return null;
+    if (!["none", "daily", "weekly", "monthly"].includes(recurrence)) return null;
     if (!text || !Number.isFinite(confidence) || confidence < 0 || confidence > 1) return null;
-    return { intent, text, confidence };
-  } catch { return null; }
+    return { intent: intent as Intent, text, confidence, date, time, recurrence: recurrence as Recurrence, priority, reminderMinutes };
+  } catch {
+    return null;
+  }
 }
