@@ -1,0 +1,4 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+export async function POST(request:NextRequest){const b=await request.json();if(!b.endpoint||!b.keys?.p256dh||!b.keys?.auth)return NextResponse.json({error:"Invalid push subscription."},{status:400});const item=await db.pushSubscription.upsert({where:{endpoint:b.endpoint},update:{p256dh:b.keys.p256dh,auth:b.keys.auth},create:{endpoint:b.endpoint,p256dh:b.keys.p256dh,auth:b.keys.auth}});return NextResponse.json({id:item.id});}
+export async function DELETE(request:NextRequest){const b=await request.json();if(!b.endpoint)return NextResponse.json({error:"endpoint is required."},{status:400});await db.pushSubscription.deleteMany({where:{endpoint:b.endpoint}});return NextResponse.json({deleted:true});}
