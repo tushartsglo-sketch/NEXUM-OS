@@ -11,18 +11,13 @@ export function middleware(request: NextRequest) {
 
   if (path === "/api/notifications/dispatch" && process.env.NEXUM_CRON_SECRET) {
     const secret = request.headers.get("x-nexum-cron-secret");
-    const vercelCron = request.headers.get("x-vercel-cron");
-    if (secret === process.env.NEXUM_CRON_SECRET || vercelCron === "1") {
-      return NextResponse.next();
-    }
+    if (secret === process.env.NEXUM_CRON_SECRET) return NextResponse.next();
   }
 
   const supplied = request.cookies.get("nexum_access")?.value;
   if (supplied === token) return NextResponse.next();
 
-  if (path.startsWith("/api/")) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  }
+  if (path.startsWith("/api/")) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
   const url = request.nextUrl.clone();
   url.pathname = "/auth";
@@ -30,6 +25,4 @@ export function middleware(request: NextRequest) {
   return NextResponse.redirect(url);
 }
 
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js).*)"]
-};
+export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js).*)"] };
