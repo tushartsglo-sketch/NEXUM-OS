@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       const priority = ["low", "medium", "high"].includes(task.priority || "") ? task.priority || "medium" : "medium";
       const reminderMinutes = Number.isInteger(task.reminderMinutes) && task.reminderMinutes >= 0 && task.reminderMinutes <= 1440 ? task.reminderMinutes : 0;
       const title = command.replace(/^(?:remind me|task)\s+/i, "").trim() || command;
-      const item = await db.task.create({ data: { title, date, time, duration: 30, status: "todo", priority, recurrence, recurrenceRule, reminderMinutes } });
+      const item = await db.task.create({ data: { title, date, time, duration: 30, status: "todo", priority, recurrence, recurrenceRule, reminderMinutes, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC" } });
       return NextResponse.json({ type: "created", kind: "task", item, parser: "ai-intent" });
     }
 
