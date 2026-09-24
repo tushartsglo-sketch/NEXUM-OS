@@ -3,9 +3,10 @@ import { createEmbedding } from "@/lib/embedding";
 import { db } from "@/lib/db";
 export async function POST(request:NextRequest){
  const b=await request.json();
- if(!b.libraryFileId)return NextResponse.json({error:"libraryFileId is required."},{status:400});
- const a=await db.documentAnalysis.findUnique({where:{libraryFileId:b.libraryFileId}});
- const file=await db.libraryFile.findUnique({where:{id:b.libraryFileId}});
+ const libraryFileId=typeof b.libraryFileId==="string"?b.libraryFileId.trim():"";
+ if(!libraryFileId)return NextResponse.json({error:"libraryFileId is required."},{status:400});
+ const a=await db.documentAnalysis.findUnique({where:{libraryFileId}});
+ const file=await db.libraryFile.findUnique({where:{id:libraryFileId}});
  if(!a||!file)return NextResponse.json({error:"Analysis or library file not found."},{status:404});
  const type=b.kind==="content-idea"?"idea":"insight";
  const title=b.title||file.name+" — "+(type==="idea"?"content opportunity":"document insight");
