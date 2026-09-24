@@ -1,0 +1,28 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+
+export async function GET() {
+  return NextResponse.json(await db.researchProject.findMany({ include: { sources: true }, orderBy: { updatedAt: "desc" } }));
+}
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  return NextResponse.json(await db.researchProject.create({
+    data: { title: body.title, question: body.question || "", status: body.status || "idea", notes: body.notes || "", insights: body.insights || "" },
+    include: { sources: true }
+  }));
+}
+
+export async function PATCH(request: NextRequest) {
+  const body = await request.json();
+  return NextResponse.json(await db.researchProject.update({
+    where: { id: body.id },
+    data: { status: body.status, notes: body.notes, insights: body.insights },
+    include: { sources: true }
+  }));
+}
+
+export async function POST_SOURCE(request: NextRequest) {
+  const body = await request.json();
+  return NextResponse.json(await db.researchSource.create({ data: { title: body.title, url: body.url, notes: body.notes || "", projectId: body.projectId } }));
+}
