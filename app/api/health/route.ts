@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       openai: checks.openai ? "AI features are configured." : "AI features will use non-AI fallbacks.",
       vapid: checks.vapid ? "Push notification credentials are configured." : "Background push is not configured.",
       cronSecret: checks.cronSecret ? "Cron endpoint is protected by a secret." : "Cron secret is not configured.",
-      accessToken: checks.accessToken ? "Cron endpoint is protected by a secret." : "Cron secret is not configured.",
+      cronSecret: checks.cronSecret ? "Cron endpoint is protected by a secret." : "Cron secret is not configured.",
       accessToken: checks.accessToken ? "Private access token is configured." : "Private access is not configured."
     }
   }, { status: healthy ? 200 : 503 });
