@@ -16,6 +16,18 @@ export async function POST(request: NextRequest) {
 
     const lower = command.toLowerCase();
     const confirm = body.confirm === true;
+    if (confirm && body.task && typeof body.task === "object" && typeof body.task.title !== "undefined") {
+      const task = body.task as { date?: string; time?: string; recurrence?: string; priority?: string; reminderMinutes?: number };
+      const date = task.date ? new Date(task.date + "T00:00:00") : new Date();
+      if (Number.isNaN(date.getTime())) return NextResponse.json({ error: "Invalid task date." }, { status: 400 });
+      const time = typeof task.time === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(task.time) ? task.time : "09:00";
+      const recurrence = ["none", "daily", "weekly", "monthly"].includes(task.recurrence || "") ? task.recurrence || "none" : "none";
+      const priority = ["low", "medium", "high"].includes(task.priority || "") ? task.priority || "medium" : "medium";
+      const reminderMinutes = Number.isInteger(task.reminderMinutes) && task.reminderMinutes >= 0 && task.reminderMinutes <= 1440 ? task.reminderMinutes : 0;
+      const title = command.replace(/^(?:remind me|task)\s+/i, "").trim() || command;
+      const item = await db.task.create({ data: { title, date, time, duration: 30, status: "todo", priority, recurrence, reminderMinutes } });
+      return NextResponse.json({ type: "created", kind: "task", item, parser: "ai-intent" });
+    }
     const interpreted = !confirm && !/^(?:remind me|task)\\s+/i.test(command) && !/^(?:task|note|research):/i.test(command)
       ? await classifyCommand(command)
       : null;
