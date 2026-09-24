@@ -20,7 +20,71 @@ function taskDateTime(task: { date: Date; time: string }) {
 
 function validId(value: unknown, name: string) { if (typeof value !== "string" || !value.trim()) throw new Error(name+" is required."); return value; }
 
-export async function GET() {
+
+
+function nextOccurrence(date: Date, recurrence: string) {
+  const next = new Date(date);
+  if (recurrence === "daily") next.setDate(next.getDate() + 1);
+  else if (recurrence === "weekly") next.setDate(next.getDate() + 7);
+  else if (recurrence === "monthly") next.setMonth(next.getMonth() + 1);
+  else return null;
+  return next;
+}
+
+async function generateRecurringTasks(now: Date) {
+  const recurring = await db.task.findMany({ where: { recurrence: { not: "none" } }, orderBy: { date: "asc" } });
+  let created = 0;
+
+  for (const task of recurring) {
+    const key = task.recurrenceKey || task.id;
+    if (!task.recurrenceKey || !task.occurrenceDate) {
+      await db.task.update({
+        where: { id: task.id },
+        data: { recurrenceKey: key, occurrenceDate: task.date }
+      });
+    }
+
+    const series = await db.task.findMany({
+      where: { OR: [{ recurrenceKey: key }, { id: key }] },
+      orderBy: { date: "desc" },
+      take: 1
+    });
+    const latest = series[0];
+    if (!latest || latest.recurrence === "none") continue;
+
+    let candidate = nextOccurrence(latest.date, latest.recurrence);
+    if (!candidate) continue;
+
+    for (let i = 0; i < 12 && candidate <= now; i++) {
+      const occurrenceDate = new Date(candidate);
+      const existing = await db.task.findFirst({ where: { recurrenceKey: key, occurrenceDate } });
+      if (!existing) {
+        await db.task.create({
+          data: {
+            title: latest.title,
+            description: latest.description,
+            date: occurrenceDate,
+            time: latest.time,
+            duration: latest.duration,
+            status: "todo",
+            priority: latest.priority,
+            project: latest.project,
+            recurrence: latest.recurrence,
+            reminderMinutes: latest.reminderMinutes,
+            recurrenceKey: key,
+            occurrenceDate
+          }
+        });
+        created++;
+      }
+      candidate = nextOccurrence(candidate, latest.recurrence);
+      if (!candidate) break;
+    }
+  }
+
+  return created;
+}
+\nexport async function GET() {
   const now = new Date();
   const [tasks, research, inbox, projects, content] = await Promise.all([
     db.task.findMany({ where: { status: { not: "done" } }, orderBy: { date: "asc" } }),
@@ -119,7 +183,7 @@ export async function GET() {
 }
 
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest) {\n  if (request.headers.get("x-nexum-action") === "generate-recurring") {\n    const created = await generateRecurringTasks(new Date());\n    return NextResponse.json({ created });\n  }
   try {
     const body = await request.json();
     const kind = validId(body.kind, "kind");
