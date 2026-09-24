@@ -97,6 +97,9 @@ model LibraryFile {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   documentText String  @default("")
+  storagePath  String  @default("")
+  mimeType     String  @default("")
+  sizeBytes    Int      @default(0)
 }
 
 model InboxItem {
