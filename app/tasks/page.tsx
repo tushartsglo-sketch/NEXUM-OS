@@ -3,7 +3,7 @@ import { useEffect,useState } from "react";
 import type { Task } from "@/lib/domain";
 type ReminderTask=Task & { reminderMinutes?:number; description?:string|null };
 
-const recurrence=["none","daily","weekly","monthly","weekday"];
+const recurrence=["none","daily","weekly","monthly","monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
 const priorities=["low","medium","high"];
 
 export default function TasksPage(){
