@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { classifyCommand } from "@/lib/command-intent";
+
 
 async function commandEmbedding(input:string){ if(!process.env.OPENAI_API_KEY) return null; const r=await fetch("https://api.openai.com/v1/embeddings",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+process.env.OPENAI_API_KEY},body:JSON.stringify({model:process.env.NEXUM_EMBEDDING_MODEL||"text-embedding-3-small",input})}); if(!r.ok)return null; const d=await r.json(); return d.data?.[0]?.embedding||null; }
 function cosine(a:number[],b:number[]){let dot=0,aa=0,bb=0;for(let i=0;i<a.length;i++){dot+=a[i]*b[i];aa+=a[i]*a[i];bb+=b[i]*b[i]}return dot/(Math.sqrt(aa)*Math.sqrt(bb)||1); }
@@ -13,6 +15,23 @@ export async function POST(request: NextRequest) {
     if (!command) return NextResponse.json({ error: "Command is required." }, { status: 400 });
 
     const lower = command.toLowerCase();
+    const confirm = body.confirm === true;
+    const interpreted = !confirm && !/^(?:remind me|task)\\s+/i.test(command) && !/^(?:task|note|research):/i.test(command)
+      ? await classifyCommand(command)
+      : null;
+    if (interpreted && interpreted.confidence >= 0.85) {
+      if (interpreted.intent === "note") {
+        const entry = await db.knowledgeEntry.create({ data: { title: interpreted.text.slice(0, 80), type: "note", topic: "General", content: interpreted.text, tags: "" } });
+        return NextResponse.json({ type: "created", kind: "knowledge", item: entry, parser: "ai-intent" });
+      }
+      if (interpreted.intent === "research") {
+        const item = await db.researchProject.create({ data: { title: interpreted.text.slice(0, 100), question: interpreted.text, status: "idea" } });
+        return NextResponse.json({ type: "created", kind: "research", item, parser: "ai-intent" });
+      }
+      if (interpreted.intent === "task") {
+        return NextResponse.json({ type: "confirmation_required", kind: "task", title: interpreted.text, command, schedule: "AI interpreted this as a task. Confirm before creating it." });
+      }
+    }
     const confirm = body.confirm === true;
     if (!confirm && /^(?:remind me|task)\s+/i.test(command)) {
       const recurringPreview = command.match(/^(?:remind me|task)\s+(.+?)\s+every\s+(day|daily|week|weekly|month|monthly|monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?:\s+at\s+(\d{1,2})(?::(\d{2}))?)?/i);
