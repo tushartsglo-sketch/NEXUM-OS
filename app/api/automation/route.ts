@@ -82,6 +82,7 @@ async function generateRecurringTasks(now: Date) {
             priority: latest.priority,
             project: latest.project,
             recurrence: latest.recurrence,
+            recurrenceRule: latest.recurrenceRule,
             reminderMinutes: latest.reminderMinutes,
             recurrenceKey: key,
             occurrenceDate
