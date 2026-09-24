@@ -53,6 +53,28 @@ model JournalEntry {
   updatedAt DateTime @updatedAt
 }
 
+model ResearchProject {
+  id          String   @id @default(cuid())
+  title       String
+  question    String
+  status      String   @default("idea")
+  notes       String   @default("")
+  insights    String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sources     ResearchSource[]
+}
+
+model ResearchSource {
+  id          String         @id @default(cuid())
+  title       String
+  url         String
+  notes       String         @default("")
+  projectId   String
+  project     ResearchProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+}
+
 model InboxItem {
   id        String   @id @default(cuid())
   text      String
