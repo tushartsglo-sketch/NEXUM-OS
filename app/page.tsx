@@ -4,7 +4,7 @@ import { useState } from "react";
 
 const tasks = [["08:00","Review today's priorities","20 min"],["11:30","Research consumer psychology","60 min"],["16:00","Develop content ideas","90 min"],["20:00","Daily review","20 min"]];
 const library = [["342","Research"],["521","Sources"],["187","Ideas"],["164","Documents"]];
-const nav = [["Dashboard","/"],["Inbox","/inbox"],["Knowledge","/knowledge"],["Research","#"],["Projects","/projects"],["Tasks","/tasks"],["Journal","/journal"],["Content","#"],["Library","#"],["Search","#"],["AI","#"]];
+const nav = [["Dashboard","/"],["Inbox","/inbox"],["Knowledge","/knowledge"],["Research","#"],["Projects","/projects"],["Tasks","/tasks"],["Journal","/journal"],["Content","#"],["Library","#"],["Search","#"],["AI","/ai"]];
 
 export default function Home() {
  const [done,setDone] = useState<number[]>([]);
