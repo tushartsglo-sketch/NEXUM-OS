@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-
-export async function GET() {
-  return NextResponse.json(await db.journalEntry.findMany({ orderBy: { date: "desc" } }));
-}
-
-function validDate(value: unknown) { const d=new Date(String(value)); if(!value || Number.isNaN(d.getTime())) throw new Error("Valid date is required."); return d; }
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  return NextResponse.json(await db.journalEntry.upsert({
-    where: { date: validDate(body.date) },
-    update: { did: body.did || "", learned: body.learned || "", mistakes: body.mistakes || "", next: body.next || "" },
-    create: { date: validDate(body.date), did: body.did || "", learned: body.learned || "", mistakes: body.mistakes || "", next: body.next || "" }
-  }));
-}
+function date(v:unknown){const d=new Date(String(v??""));if(Number.isNaN(d.getTime()))throw new Error("Valid date is required.");return d;}
+function text(v:unknown){return typeof v==="string"?v.trim():"";}
+function fail(e:unknown,s=400){return NextResponse.json({error:e instanceof Error?e.message:"Journal request failed."},{status:s});}
+export async function GET(){try{return NextResponse.json(await db.journalEntry.findMany({orderBy:{date:"desc"}}));}catch(e){return fail(e,500);}}
+export async function POST(request:NextRequest){try{const b=await request.json();const d=date(b.date);return NextResponse.json(await db.journalEntry.upsert({where:{date:d},update:{did:text(b.did),learned:text(b.learned),mistakes:text(b.mistakes),next:text(b.next)},create:{date:d,did:text(b.did),learned:text(b.learned),mistakes:text(b.mistakes),next:text(b.next)}}));}catch(e){return fail(e);}}
