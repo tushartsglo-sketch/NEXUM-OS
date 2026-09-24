@@ -136,6 +136,8 @@ export async function PATCH(request: NextRequest) {
     if (!body.id || typeof body.id !== "string") return NextResponse.json({ error: "id is required." }, { status: 400 });
 
     if (body.type === "task") {
+      const existing = await db.task.findUnique({ where: { id: body.id } });
+      if (!existing) return NextResponse.json({ error: "Task not found." }, { status: 404 });
       const data: Record<string, unknown> = {};
       if (body.status !== undefined) data.status = validChoice(body.status, ["todo", "done"], "todo", "status");
       if (body.title !== undefined) data.title = requiredString(body.title, "title");
@@ -146,6 +148,7 @@ export async function PATCH(request: NextRequest) {
       if (body.priority !== undefined) data.priority = validChoice(body.priority, ["low", "medium", "high"], "medium", "priority");
       if (body.project !== undefined) data.project = optionalString(body.project) || null;
       if (body.recurrence !== undefined) data.recurrence = validChoice(body.recurrence, ["none", "daily", "weekly", "monthly"], "none", "recurrence");
+      if (body.recurrenceRule !== undefined) data.recurrenceRule = optionalString(body.recurrenceRule) || null;
       if (body.recurrenceRule !== undefined) data.recurrenceRule = optionalString(body.recurrenceRule) || null;
       if (body.reminderMinutes !== undefined) data.reminderMinutes = safeNumber(body.reminderMinutes, 10, 0, 1440);
       return NextResponse.json(await db.task.update({ where: { id: body.id }, data }));
