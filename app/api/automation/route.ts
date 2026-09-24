@@ -18,6 +18,8 @@ function taskDateTime(task: { date: Date; time: string }) {
   return date;
 }
 
+function validId(value: unknown, name: string) { if (typeof value !== "string" || !value.trim()) throw new Error(name+" is required."); return value; }
+
 export async function GET() {
   const now = new Date();
   const [tasks, research, inbox, projects, content] = await Promise.all([
@@ -114,4 +116,46 @@ export async function GET() {
     count: suggestions.length,
     suggestions: suggestions.slice(0, 30)
   });
+}
+
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const kind = validId(body.kind, "kind");
+    const id = validId(body.entityId, "entityId");
+
+    if (kind === "overdue-task" || kind === "stale-content-idea") {
+      if (kind === "overdue-task") {
+        const task = await db.task.findUnique({ where: { id } });
+        if (!task) return NextResponse.json({ error: "Task not found." }, { status: 404 });
+        if (body.action === "complete") {
+          return NextResponse.json(await db.task.update({ where: { id }, data: { status: "done" } }));
+        }
+        if (body.action === "reschedule") {
+          const date = new Date(body.date);
+          if (Number.isNaN(date.getTime())) return NextResponse.json({ error: "Valid date is required." }, { status: 400 });
+          return NextResponse.json(await db.task.update({ where: { id }, data: { date, ...(body.time ? { time: String(body.time) } : {}) } }));
+        }
+        return NextResponse.json({ error: "Supported task actions: complete, reschedule." }, { status: 400 });
+      }
+      const item = await db.contentItem.findUnique({ where: { id } });
+      if (!item) return NextResponse.json({ error: "Content item not found." }, { status: 404 });
+      if (body.action === "publish") return NextResponse.json(await db.contentItem.update({ where: { id }, data: { stage: "published" } }));
+      if (body.action === "archive") return NextResponse.json(await db.contentItem.update({ where: { id }, data: { stage: "archived" } }));
+      return NextResponse.json({ error: "Supported content actions: publish, archive." }, { status: 400 });
+    }
+
+    if (kind === "stale-inbox") {
+      const item = await db.inboxItem.findUnique({ where: { id } });
+      if (!item) return NextResponse.json({ error: "Inbox item not found." }, { status: 404 });
+      if (body.action === "archive") return NextResponse.json(await db.inboxItem.update({ where: { id }, data: { status: "archived" } }));
+      if (body.action === "complete") return NextResponse.json(await db.inboxItem.update({ where: { id }, data: { status: "processed" } }));
+      return NextResponse.json({ error: "Supported inbox actions: complete, archive." }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: "This automation has no executable action yet." }, { status: 400 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Automation action failed." }, { status: 400 });
+  }
 }
