@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
           description: optionalString(body.description) || null,
           date: validDate(body.date, "date"),
           time: validTime(body.time),
+          timezone: optionalString(body.timezone) || "UTC",
           duration: safeNumber(body.duration, 30, 1, 1440),
           priority: validChoice(body.priority, ["low", "medium", "high"], "medium", "priority"),
           project: optionalString(body.project) || null,
@@ -144,6 +145,7 @@ export async function PATCH(request: NextRequest) {
       if (body.description !== undefined) data.description = optionalString(body.description) || null;
       if (body.date !== undefined) data.date = validDate(body.date, "date");
       if (body.time !== undefined) data.time = validTime(body.time);
+      if (body.timezone !== undefined) data.timezone = optionalString(body.timezone) || "UTC";
       if (body.duration !== undefined) data.duration = safeNumber(body.duration, 30, 1, 1440);
       if (body.priority !== undefined) data.priority = validChoice(body.priority, ["low", "medium", "high"], "medium", "priority");
       if (body.project !== undefined) data.project = optionalString(body.project) || null;
