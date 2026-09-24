@@ -84,7 +84,8 @@ async function generateRecurringTasks(now: Date) {
 
   return created;
 }
-\nexport async function GET() {
+
+export async function GET() {
   const now = new Date();
   const [tasks, research, inbox, projects, content] = await Promise.all([
     db.task.findMany({ where: { status: { not: "done" } }, orderBy: { date: "asc" } }),
@@ -183,7 +184,11 @@ async function generateRecurringTasks(now: Date) {
 }
 
 
-export async function POST(request: NextRequest) {\n  if (request.headers.get("x-nexum-action") === "generate-recurring") {\n    const created = await generateRecurringTasks(new Date());\n    return NextResponse.json({ created });\n  }
+export async function POST(request: NextRequest) {
+  if (request.headers.get("x-nexum-action") === "generate-recurring") {
+    const created = await generateRecurringTasks(new Date());
+    return NextResponse.json({ created });
+  }
   try {
     const body = await request.json();
     const kind = validId(body.kind, "kind");
