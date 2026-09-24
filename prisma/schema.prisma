@@ -103,6 +103,21 @@ model LibraryFile {
   storagePath  String  @default("")
   mimeType     String  @default("")
   sizeBytes    Int      @default(0)
+  analysis     DocumentAnalysis?
+}
+
+model DocumentAnalysis {
+  id             String   @id @default(cuid())
+  libraryFileId  String   @unique
+  summary        String   @default("")
+  keyPoints      String   @default("")
+  concepts       String   @default("")
+  questions      String   @default("")
+  contradictions String   @default("")
+  contentIdeas   String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  libraryFile    LibraryFile @relation(fields: [libraryFileId], references: [id], onDelete: Cascade)
 }
 
 model KnowledgeLink {
