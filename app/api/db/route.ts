@@ -104,9 +104,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === "task") {
-      const requestedRecurrence = validChoice(body.recurrence, ["none", "daily", "weekly", "monthly", "weekday"], "none", "recurrence");
-      const recurrence = requestedRecurrence === "weekday" ? "weekly" : requestedRecurrence;
-      const recurrenceRule = optionalString(body.recurrenceRule) || (requestedRecurrence === "weekday" ? "weekday" : null);
+      const requestedRecurrence = validChoice(body.recurrence, ["none", "daily", "weekly", "monthly", "weekday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"], "none", "recurrence");
+      const weekdayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+      const recurrence = ["weekday", ...weekdayNames].includes(requestedRecurrence) ? "weekly" : requestedRecurrence;
+      const recurrenceRule = optionalString(body.recurrenceRule) || (requestedRecurrence === "weekday" ? "weekday" : weekdayNames.includes(requestedRecurrence) ? "weekday:" + weekdayNames.indexOf(requestedRecurrence) : null);
       return NextResponse.json(await db.task.create({
         data: {
           title: requiredString(body.title, "title"),
