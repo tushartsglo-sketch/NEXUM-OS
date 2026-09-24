@@ -22,11 +22,19 @@ function validId(value: unknown, name: string) { if (typeof value !== "string" |
 
 
 
-function nextOccurrence(date: Date, recurrence: string) {
+function nextOccurrence(date: Date, recurrence: string, rule?: string | null) {
   const next = new Date(date);
   if (recurrence === "daily") next.setDate(next.getDate() + 1);
-  else if (recurrence === "weekly") next.setDate(next.getDate() + 7);
-  else if (recurrence === "monthly") next.setMonth(next.getMonth() + 1);
+  else if (recurrence === "weekly") {
+    if (rule === "weekday") {
+      next.setDate(next.getDate() + 1);
+      while (next.getDay() === 0 || next.getDay() === 6) next.setDate(next.getDate() + 1);
+    } else if (rule && /^weekday:\\d$/.test(rule)) {
+      const target = Number(rule.split(":")[1]);
+      let delta = (target - next.getDay() + 7) % 7 || 7;
+      next.setDate(next.getDate() + delta);
+    } else next.setDate(next.getDate() + 7);
+  } else if (recurrence === "monthly") next.setMonth(next.getMonth() + 1);
   else return null;
   return next;
 }
@@ -57,7 +65,7 @@ async function generateRecurringTasks(now: Date) {
     });
     if (!latest || latest.recurrence === "none") continue;
 
-    let candidate = nextOccurrence(latest.date, latest.recurrence);
+    let candidate = nextOccurrence(latest.date, latest.recurrence, latest.recurrenceRule);
     if (!candidate) continue;
 
     for (let i = 0; i < 12 && candidate <= now; i++) {
@@ -86,7 +94,7 @@ async function generateRecurringTasks(now: Date) {
         }
       }
 
-      candidate = nextOccurrence(candidate, latest.recurrence);
+      candidate = nextOccurrence(candidate, latest.recurrence, latest.recurrenceRule);
       if (!candidate) break;
     }
   }
