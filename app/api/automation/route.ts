@@ -11,11 +11,21 @@ type Suggestion = {
   entityId?: string;
 };
 
-function taskDateTime(task: { date: Date; time: string }) {
+function taskDateTime(task: { date: Date; time: string; timezone?: string }) {
   const [hours, minutes] = String(task.time || "00:00").split(":").map(Number);
-  const date = new Date(task.date);
-  date.setHours(Number.isFinite(hours) ? hours : 0, Number.isFinite(minutes) ? minutes : 0, 0, 0);
-  return date;
+  const safeHours = Number.isFinite(hours) ? hours : 0;
+  const safeMinutes = Number.isFinite(minutes) ? minutes : 0;
+  const zone = task.timezone || "UTC";
+  const base = new Date(task.date);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(base);
+  const values = Object.fromEntries(parts.filter(p => p.type !== "literal").map(p => [p.type, p.value]));
+  const target = `${values.year}-${values.month}-${values.day}T${String(safeHours).padStart(2,"0")}:${String(safeMinutes).padStart(2,"0")}:00`;
+  const asUtc = new Date(target + "Z");
+  const rendered = new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(asUtc);
+  const r = Object.fromEntries(rendered.filter(p => p.type !== "literal").map(p => [p.type, p.value]));
+  const zoneAsUtc = Date.UTC(Number(r.year), Number(r.month)-1, Number(r.day), Number(r.hour), Number(r.minute), Number(r.second));
+  const offset = zoneAsUtc - asUtc.getTime();
+  return new Date(asUtc.getTime() - offset);
 }
 
 function validId(value: unknown, name: string) { if (typeof value !== "string" || !value.trim()) throw new Error(name+" is required."); return value; }
