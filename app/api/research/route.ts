@@ -18,11 +18,15 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   const body = await request.json();
-  return NextResponse.json(await db.researchProject.update({
+  const current = await db.researchProject.findUnique({ where: { id: body.id } });
+  if (!current) return NextResponse.json({ error: "Research record not found." }, { status: 404 });
+  const updated = await db.researchProject.update({
     where: { id: body.id },
     data: { status: body.status, notes: body.notes, insights: body.insights },
     include: { sources: true }
-  }));
+  });
+  if (process.env.OPENAI_API_KEY) await db.researchProject.update({ where: { id: updated.id }, data: { embedding: await createEmbedding(updated.title + "\n" + updated.question + "\n" + (updated.notes || "") + "\n" + (updated.insights || "")) } });
+  return NextResponse.json(updated);
 }
 
 export async function POST_SOURCE(request: NextRequest) {
