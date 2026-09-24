@@ -131,6 +131,14 @@ model PushSubscription {
   updatedAt DateTime @updatedAt
 }
 
+model NotificationDelivery {
+  id          String   @id @default(cuid())
+  taskId      String
+  scheduledAt DateTime
+  createdAt   DateTime @default(now())
+  @@unique([taskId, scheduledAt])
+}
+
 model KnowledgeLink {
   id        String   @id @default(cuid())
   fromType  String
