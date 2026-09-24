@@ -10,7 +10,7 @@ export async function classifyCommand(input: string) {
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
       body: JSON.stringify({
         model: process.env.NEXUM_AI_MODEL || "gpt-5-mini",
-        instructions: "Classify a NEXUM command. Return JSON only with intent, text, confidence and optional task fields date, time, recurrence, priority, reminderMinutes. Use task only for a clear future action. Never invent missing scheduling details. Do not execute the request.",
+        instructions: "Classify a NEXUM command. Return JSON only with intent, text, confidence and optional task fields date, time, recurrence, recurrenceRule, priority, reminderMinutes. Use task only for a clear future action. Never invent missing scheduling details. Do not execute the request.",
         input
       })
     });
@@ -27,10 +27,11 @@ export async function classifyCommand(input: string) {
     const time = typeof parsed.time === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(parsed.time) ? parsed.time : undefined;
     const priority = ["low", "medium", "high"].includes(parsed.priority) ? parsed.priority : "medium";
     const reminderMinutes = Number.isInteger(parsed.reminderMinutes) && parsed.reminderMinutes >= 0 && parsed.reminderMinutes <= 1440 ? parsed.reminderMinutes : 0;
+    const recurrenceRule = typeof parsed.recurrenceRule === "string" && /^(weekday|weekday:[0-6])$/.test(parsed.recurrenceRule) ? parsed.recurrenceRule : undefined;
     if (!["search", "note", "research", "task"].includes(intent)) return null;
     if (!["none", "daily", "weekly", "monthly", "weekday"].includes(recurrence)) return null;
     if (!text || !Number.isFinite(confidence) || confidence < 0 || confidence > 1) return null;
-    return { intent: intent as Intent, text, confidence, date, time, recurrence: recurrence as Recurrence, priority, reminderMinutes };
+    return { intent: intent as Intent, text, confidence, date, time, recurrence: recurrence as Recurrence, recurrenceRule, priority, reminderMinutes };
   } catch {
     return null;
   }
