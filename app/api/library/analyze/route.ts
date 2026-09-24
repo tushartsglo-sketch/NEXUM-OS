@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 export async function POST(request:NextRequest){
  try{
-  const {id}=await request.json();
+  const body=await request.json();
+  const id=typeof body.id==="string"?body.id.trim():"";
   if(!id)return NextResponse.json({error:"Library item id is required."},{status:400});
   const file=await db.libraryFile.findUnique({where:{id}});
   if(!file)return NextResponse.json({error:"Library item not found."},{status:404});
