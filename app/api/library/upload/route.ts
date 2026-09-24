@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) return NextResponse.json({ error: "A file is required." }, { status: 400 });
+    const maxBytes = 25 * 1024 * 1024;
+    if (file.size > maxBytes) return NextResponse.json({ error: "File exceeds the 25 MB limit." }, { status: 413 });
     const buffer = Buffer.from(await file.arrayBuffer());
     const name = file.name.toLowerCase();
     let text = "", type = "document", mimeType = file.type || "application/octet-stream";
