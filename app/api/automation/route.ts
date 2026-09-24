@@ -24,6 +24,14 @@ function validId(value: unknown, name: string) { if (typeof value !== "string" |
 
 function nextOccurrence(date: Date, recurrence: string, rule?: string | null) {
   const next = new Date(date);
+  if (recurrence === "monthly") {
+    const day = date.getDate();
+    next.setDate(1);
+    next.setMonth(next.getMonth() + 1);
+    const lastDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+    next.setDate(Math.min(day, lastDay));
+    return next;
+  }
   if (recurrence === "daily") next.setDate(next.getDate() + 1);
   else if (recurrence === "weekly") {
     if (rule === "weekday") {
@@ -34,7 +42,7 @@ function nextOccurrence(date: Date, recurrence: string, rule?: string | null) {
       let delta = (target - next.getDay() + 7) % 7 || 7;
       next.setDate(next.getDate() + delta);
     } else next.setDate(next.getDate() + 7);
-  } else if (recurrence === "monthly") next.setMonth(next.getMonth() + 1);
+  } else if (recurrence === "monthly") return next;
   else return null;
   return next;
 }
