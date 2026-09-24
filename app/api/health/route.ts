@@ -1,7 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-export async function GET() {
+function authorized(request: NextRequest) {
+  const expected = process.env.NEXUM_ACCESS_TOKEN;
+  if (!expected) return false;
+  return request.headers.get("x-nexum-access-token") === expected;
+}
+
+export async function GET(request: NextRequest) {
+  if (!authorized(request)) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   const checks = {
     database: false,
     openai: Boolean(process.env.OPENAI_API_KEY),
@@ -27,6 +37,7 @@ export async function GET() {
       openai: checks.openai ? "AI features are configured." : "AI features will use non-AI fallbacks.",
       vapid: checks.vapid ? "Push notification credentials are configured." : "Background push is not configured.",
       cronSecret: checks.cronSecret ? "Cron endpoint is protected by a secret." : "Cron secret is not configured.",
+      accessToken: checks.accessToken ? "Cron endpoint is protected by a secret." : "Cron secret is not configured.",
       accessToken: checks.accessToken ? "Private access token is configured." : "Private access is not configured."
     }
   }, { status: healthy ? 200 : 503 });
