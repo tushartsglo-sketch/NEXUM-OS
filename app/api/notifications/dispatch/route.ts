@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 import { db } from "@/lib/db";
 export async function POST(request:NextRequest){
- const secret=request.headers.get("x-nexum-cron-secret"); if(process.env.NEXUM_CRON_SECRET&&secret!==process.env.NEXUM_CRON_SECRET)return NextResponse.json({error:"Unauthorized."},{status:401});
+ const secret=request.headers.get("x-nexum-cron-secret"); const vercelCron=request.headers.get("x-vercel-cron"); if(process.env.NEXUM_CRON_SECRET){ if(secret!==process.env.NEXUM_CRON_SECRET && vercelCron!=="1") return NextResponse.json({error:"Unauthorized."},{status:401}); }
  if(!process.env.VAPID_PUBLIC_KEY||!process.env.VAPID_PRIVATE_KEY||!process.env.VAPID_SUBJECT)return NextResponse.json({error:"VAPID configuration is missing."},{status:503});
  webpush.setVapidDetails(process.env.VAPID_SUBJECT,process.env.VAPID_PUBLIC_KEY,process.env.VAPID_PRIVATE_KEY);
  const recurringResponse=await fetch(new URL("/api/automation",request.url),{method:"POST",headers:{"x-nexum-action":"generate-recurring"}}); if(!recurringResponse.ok)return NextResponse.json({error:"Recurring task generation failed."},{status:500}); const now=new Date(),end=new Date(now.getTime()+65*60000); const tasks=await db.task.findMany({where:{status:{not:"done"},date:{gte:new Date(now.getFullYear(),now.getMonth(),now.getDate()),lte:end}}}); const subs=await db.pushSubscription.findMany(); let sent=0;
