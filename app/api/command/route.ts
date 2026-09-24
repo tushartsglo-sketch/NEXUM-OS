@@ -29,7 +29,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ type: "created", kind: "research", item, parser: "ai-intent" });
       }
       if (interpreted.intent === "task") {
-        return NextResponse.json({ type: "confirmation_required", kind: "task", title: interpreted.text, command, schedule: "AI interpreted this as a task. Confirm before creating it." });
+        return NextResponse.json({
+          type: "confirmation_required",
+          kind: "task",
+          title: interpreted.text,
+          command,
+          schedule: [interpreted.date, interpreted.time, interpreted.recurrence !== "none" ? "every " + interpreted.recurrence : "", interpreted.priority !== "medium" ? interpreted.priority + " priority" : "", interpreted.reminderMinutes ? interpreted.reminderMinutes + " min reminder" : ""].filter(Boolean).join(" · ") || "AI interpreted this as a task.",
+          task: { date: interpreted.date, time: interpreted.time, recurrence: interpreted.recurrence, priority: interpreted.priority, reminderMinutes: interpreted.reminderMinutes }
+        });
       }
     }
     const confirm = body.confirm === true;
