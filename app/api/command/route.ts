@@ -10,8 +10,18 @@ export async function POST(request: NextRequest) {
     if (!command) return NextResponse.json({ error: "Command is required." }, { status: 400 });
 
     const lower = command.toLowerCase();
-    const relativeTask = command.match(/^(?:remind me|task)\s+(.+?)\s+(?:tomorrow|today)\s+at\s+(\d{1,2})(?::(\d{2}))?\s*$/i);
-    if (relativeTask) { const day = /tomorrow/i.test(command) ? 1 : 0; const date = new Date(); date.setDate(date.getDate()+day); date.setHours(Number(relativeTask[2]), Number(relativeTask[3]||0), 0, 0); const task=await db.task.create({data:{title:relativeTask[1].trim(),date,time:date.toTimeString().slice(0,5),duration:30,status:"todo",priority:"medium"}}); return NextResponse.json({type:"created",kind:"task",item:task,parser:"relative-task"}); }
+    const relativeTask = command.match(/^(?:remind me|task)\s+(.+?)\s+(tomorrow|today|in\s+\d+\s+(?:hour|hours|minute|minutes)|next\s+\w+)\s*(?:at\s+(\d{1,2})(?::(\d{2}))?)?\s*$/i);
+    if (relativeTask) {
+      const phrase=relativeTask[2].toLowerCase(), date=new Date();
+      if (phrase==="tomorrow") date.setDate(date.getDate()+1);
+      else if (phrase==="today") {}
+      else if (/^in\s+\d+\s+hour/.test(phrase)) date.setHours(date.getHours()+Number(phrase.match(/\d+/)?.[0]||0));
+      else if (/^in\s+\d+\s+minute/.test(phrase)) date.setMinutes(date.getMinutes()+Number(phrase.match(/\d+/)?.[0]||0));
+      else if (/^next\s+/.test(phrase)) { const names=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"], target=names.indexOf(phrase.replace("next ","")); if(target>=0){let delta=(target-date.getDay()+7)%7||7;date.setDate(date.getDate()+delta);} }
+      if (relativeTask[3]) date.setHours(Number(relativeTask[3]),Number(relativeTask[4]||0),0,0);
+      const task=await db.task.create({data:{title:relativeTask[1].trim(),date,time:date.toTimeString().slice(0,5),duration:30,status:"todo",priority:"medium"}});
+      return NextResponse.json({type:"created",kind:"task",item:task,parser:"relative-task"});
+    }
     if (lower.startsWith("task:")) {
       const title = command.slice(5).trim();
       if (!title) return NextResponse.json({ error: "Task title is required." }, { status: 400 });
