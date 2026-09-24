@@ -1,0 +1,31 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+
+export async function GET(request: NextRequest) {
+  const type = request.nextUrl.searchParams.get("type");
+  if (type === "tasks") return NextResponse.json(await db.task.findMany({ orderBy: [{ date: "asc" }, { time: "asc" }] }));
+  if (type === "knowledge") return NextResponse.json(await db.knowledgeEntry.findMany({ orderBy: { updatedAt: "desc" } }));
+  if (type === "projects") return NextResponse.json(await db.project.findMany({ orderBy: { updatedAt: "desc" } }));
+  if (type === "journal") return NextResponse.json(await db.journalEntry.findMany({ orderBy: { date: "desc" } }));
+  if (type === "inbox") return NextResponse.json(await db.inboxItem.findMany({ orderBy: { createdAt: "desc" } }));
+  return NextResponse.json({ error: "Unknown data type." }, { status: 400 });
+}
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const type = body.type;
+  if (type === "inbox") return NextResponse.json(await db.inboxItem.create({ data: { text: body.text } }));
+  if (type === "knowledge") return NextResponse.json(await db.knowledgeEntry.create({ data: { title: body.title, type: body.entryType || "note", topic: body.topic || "General", tags: body.tags || "", content: body.content || "" } }));
+  if (type === "project") return NextResponse.json(await db.project.create({ data: { name: body.name, description: body.description || "" } }));
+  if (type === "journal") return NextResponse.json(await db.journalEntry.upsert({ where: { date: new Date(body.date) }, update: { did: body.did || "", learned: body.learned || "", mistakes: body.mistakes || "", next: body.next || "" }, create: { date: new Date(body.date), did: body.did || "", learned: body.learned || "", mistakes: body.mistakes || "", next: body.next || "" } }));
+  if (type === "task") return NextResponse.json(await db.task.create({ data: { title: body.title, date: new Date(body.date), time: body.time, duration: Number(body.duration || 30), priority: body.priority || "medium", project: body.project || null } }));
+  return NextResponse.json({ error: "Unknown data type." }, { status: 400 });
+}
+
+export async function PATCH(request: NextRequest) {
+  const body = await request.json();
+  if (body.type === "task") return NextResponse.json(await db.task.update({ where: { id: body.id }, data: { status: body.status } }));
+  if (body.type === "inbox") return NextResponse.json(await db.inboxItem.update({ where: { id: body.id }, data: { status: body.status } }));
+  if (body.type === "project") return NextResponse.json(await db.project.update({ where: { id: body.id }, data: { progress: Number(body.progress), status: body.status } }));
+  return NextResponse.json({ error: "Unknown data type." }, { status: 400 });
+}
