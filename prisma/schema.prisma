@@ -96,6 +96,7 @@ model LibraryFile {
   tags        String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  documentText String  @default("")
 }
 
 model InboxItem {
